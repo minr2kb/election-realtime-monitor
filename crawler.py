@@ -45,6 +45,8 @@ city_list=city_list_raw.find_elements_by_tag_name("option")
 city_names = [option.text for option in city_list] 
 city_names = city_names[2:] 
 
+print(city_names)
+
 dropdown = Select(city_list_raw)
 dropdown.select_by_visible_text(city_names[0])
 
@@ -61,27 +63,37 @@ def get_vote(n):
     gu = soup.find_all('td','alignL')
     gu_names = [tmp_val.get_text() for tmp_val in gu[1:]]
 
+    # print(gu_names)
+
     tmp_list = []
     for i in range(19,len(tmp),18):
         tmp_values = [(tmp_val.get_text().replace(',','')) for tmp_val in tmp]
+        # print(tmp_values)
         tmp_list.append(tmp_values)
-        tmp_list=tmp_list[:-1]
-        gu_dict={}
-        for i in range(len(tmp_list)):
-            name=gu_names[i]
-            items=tmp_list[i]
-            gu_dict[name] = items
         
-        result = pd.DataFrame.from_dict(gu_dict).T
-        result.columns=['총 투표수','이재명','윤석열','심상정','안철수','오준호','허경영','이백윤','옥은호','김동연','김경재','조원진','김재연','이경희','김민찬']
+    tmp_list=tmp_list[0]
+  
+        
+    gu_dict={}
+    for i in range(len(gu_names)):
+        name=gu_names[i]
+        items=tmp_list[i]
+        gu_dict[name] = items
+    
+    print(gu_dict)
+    result = pd.DataFrame.from_dict(gu_dict).T
+    print(result.head())
+    result.columns=['총 투표수','이재명','윤석열','심상정','안철수','오준호','허경영','이백윤','옥은호','김동연','김경재','조원진','김재연','이경희','김민찬']
 
-        result['광역시도'] = n
-        result.reset_index(inplace=True)
-        result.rename(index=str, columns={"index":"시군"}, inplace =True)
+    result['광역시도'] = n
+    result.reset_index(inplace=True)
+    result.rename(index=str, columns={"index":"시군"}, inplace =True)
 
     return result
 
 for city in city_names:
+    print(city)
+    time.sleep(1)
     element = driver.find_element_by_id('cityCode')
     element.send_keys(city)
     driver.find_element_by_xpath("""//*[@id="searchBtn"]""").click()
