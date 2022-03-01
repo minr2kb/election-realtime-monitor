@@ -31,3 +31,4 @@ code_list_raw = driver.find_elements(By.XPATH,'//*[@id="electionCode"]/option')
 print(len(code_list_raw))
 for i in range(len(code_list_raw)):
     print(code_list_raw[i].text)
+
