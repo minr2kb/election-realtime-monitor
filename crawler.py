@@ -7,6 +7,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+from bs4 import BeautifulSoup
 
 driver = webdriver.Chrome('./chromedriver') 
 
@@ -25,10 +26,33 @@ selected_name = select_names[1]
 
 dropdown = Select(select_list_raw)
 dropdown.select_by_visible_text(selected_name)
-
+time.sleep(1)
 #4. 대통령선거 클릭 
-code_list_raw = driver.find_elements(By.XPATH,'//*[@id="electionCode"]/option')
-print(len(code_list_raw))
-for i in range(len(code_list_raw)):
-    print(code_list_raw[i].text)
+code_list_raw = driver.find_element_by_xpath("""//*[@id="electionCode"]""")
+code_list = code_list_raw.find_elements_by_tag_name('option')
+code_names = [option.text for option in code_list] 
+selected_name = code_names[1]
+
+dropdown = Select(code_list_raw)
+dropdown.select_by_visible_text(selected_name)
+time.sleep(1)
+
+#5. 시도군 선택
+
+city_list_raw = driver.find_element_by_xpath("""//*[@id="cityCode"]""") 
+city_list=city_list_raw.find_elements_by_tag_name("option") 
+city_names = [option.text for option in city_list] 
+city_names = city_names[2:] 
+print(city_names)
+
+dropdown = Select(city_list_raw)
+dropdown.select_by_visible_text(city_names[0])
+
+#검색 버튼 클릭 
+driver.find_element_by_xpath("""//*[@id="searchBtn"]""").click()
+
+#정보 긁어오기 
+
+
+
 
