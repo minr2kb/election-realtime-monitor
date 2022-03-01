@@ -53,7 +53,6 @@ driver.find_element_by_xpath("""//*[@id="searchBtn"]""").click()
 
 #정보 긁어오기 
 
-
 def get_vote(n):
     name = n
     html = driver.page_source
