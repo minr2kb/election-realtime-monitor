@@ -27,7 +27,7 @@ pip3 install -r requirements.txt
 
 ```python
 # excute the crawler
-python3 crawler.py
+python3 server.py
 ```
 
 ### windows
@@ -45,5 +45,5 @@ pip install -r requirements.txt
 
 ```python
 # excute the crawler
-python crawler.py
+python server.py
 ```
