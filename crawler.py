@@ -12,6 +12,85 @@ from bs4 import BeautifulSoup
 # headless 옵션으로 브라우져의 백그라운드 실행
 page = '투표현황'
 
+def crawl_vc():
+    options = webdriver.ChromeOptions()
+    options.add_argument("headless")
+    driver = webdriver.Chrome('./chromedriver', options=options) 
+
+    #1. 개표현황 주소로 이동 
+    print("Opening the browser with headless mode...")
+    driver.get('http://info.nec.go.kr/main/showDocument.xhtml?electionId=0020220309&topMenuId=VC&secondMenuId=VCAP01')
+
+    #2. 시도군 리스트 가져오기
+
+    city_list_raw = driver.find_element_by_xpath("""//*[@id="cityCode"]""") 
+    city_list=city_list_raw.find_elements_by_tag_name("option") 
+    city_names = [option.text for option in city_list] 
+    city_names = city_names[1:]  # city_names[2:] ==> city_names[1:] 서울특별시 추가
+
+    # #3. 투표일자 리스트 가져오기 
+    # date_list_raw = driver.find_element_by_xpath("""//*[@id="dateCode"]""")
+    # date_list = date_list_raw.find_elements_by_tag_name("option")
+    # date_names = [option.text for option in date_list]
+    # date_names = date_names[1:]
+
+    def get_vote(region):
+        html = driver.page_source
+        soup = BeautifulSoup(html,'html.parser')
+        tmp = soup.find_all('td','alignR')
+        gu = []
+        for td in soup.select('table#table01>tbody>tr>td:nth-child(1)'):
+            gu.append(td)
+        gu_names = [tmp_val.get_text().strip() for tmp_val in gu[1:]]
+        tmp_list = []
+
+
+        # 한 줄에 총 3개의 column이 있음.
+        for i in range(0,len(tmp),3):
+            tmp_values = [(tmp_val.get_text().replace(',','').replace(" ", "")) for tmp_val in tmp[i:i+3]]
+            tmp_list.append(tmp_values)
+       
+    
+        # 처음의 시도 총합과 필요없는 데이터 trim
+        tmp_list=tmp_list[1:] 
+
+        gu_dict={}
+
+        for i in range(len(tmp_list)):
+            key=gu_names[i] #2i+1 -> i
+            values=tmp_list[i]
+            gu_dict[key] = values
+
+        # #Pandas 데이터프레임으로 변환
+        result = pd.DataFrame.from_dict(gu_dict).T
+
+        result.columns=['선거인수','사전 투표자수','사전투표율']
+       
+        # #각 구들의 광역시도에 대한 정보 column을 추가
+        result['광역시도'] = region
+        # result.reset_index(inplace=True)
+        result.rename(index=str, columns={"index":"시군"}, inplace =True)
+
+        return result
+
+
+    for city in city_names:
+        print("Crawling " + city + "...")
+        element = driver.find_element_by_id('cityCode')
+        element.send_keys(city) # 도시를 선택
+        driver.find_element_by_xpath('//*[@id="spanSubmit"]/input').click() # 검색버튼
+        # time.sleep(0.5) # 로드해올 시간
+        tmp= get_vote(city)
+
+        if city == city_names[0]:
+            result = tmp
+        else:
+            result = result.append(tmp)  
+    driver.quit()
+    return result.to_html()
+
+
+
 def crawl_nec():
     options = webdriver.ChromeOptions()
     options.add_argument("headless")
@@ -19,9 +98,9 @@ def crawl_nec():
     #1.개표현황 주소로 이동 
     print("Opening the browser with headless mode...")
     if(page == '투표현황'):
-     driver.get('http://info.nec.go.kr/main/showDocument.xhtml?electionId=0000000000&topMenuId=VC&secondMenuId=VCVP01')
+        driver.get('http://info.nec.go.kr/main/showDocument.xhtml?electionId=0020220309&topMenuId=VC&secondMenuId=VCAP01')
     else:
-     driver.get('http://info.nec.go.kr/main/showDocument.xhtml?electionId=0000000000&topMenuId=VC&secondMenuId=VCAP01')
+        driver.get('http://info.nec.go.kr/main/showDocument.xhtml?electionId=0000000000&topMenuId=VC&secondMenuId=VCAP01')
 
     #2. 대통령 선거 클릭
     driver.find_element_by_xpath("""//*[@id="electionType1"]""").click()
@@ -46,7 +125,7 @@ def crawl_nec():
 
     #5-1, 투표일자 리스트 가져오기 
     if(page != '투표현황'):
-        date_list_raw = driver.find_element_by_xpath("""//*[@id="dateCode"]""");
+        date_list_raw = driver.find_element_by_xpath("""//*[@id="dateCode"]""")
         date_list = date_list_raw.find_elements_by_tag_name("option")
         date_names = [option.text for option in date_list]
         date_names = date_names[1:]
@@ -146,3 +225,5 @@ def crawl_nec():
 
             return result.to_html()
     
+# crawl_nec()
+# result.to_csv('./data/election_result.csv', encoding='utf-8', sep=',')
